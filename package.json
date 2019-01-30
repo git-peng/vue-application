@@ -1,0 +1,21 @@
+{
+  "name": "britepayment",
+  "version": "1.0.0",
+  "description": "App demonstrating front end technologies using Vue.js",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server/app.js",
+    "dev": "nodemon server/app.js",
+    "upload-sample-data": "node server/upload-sample.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.4",
+    "mongodb": "^3.1.13",
+    "mongoose": "^5.4.7",
+    "vue": "^2.5.22",
+    "vuex": "^3.1.0"
+  }
+}

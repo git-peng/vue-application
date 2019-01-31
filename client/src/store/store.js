@@ -32,7 +32,7 @@ export default new Vuex.Store({
             }
             commit('REQUEST_STARTED');
             commit('START_FETCHING_PAYMENTS');
-            axios.get(uri+'/api/payments',{params:req}).then((res) => {
+            axios.get(uri+'payments',{params:req}).then((res) => {
                 commit('REQUEST_COMPLETED');
                 commit('FINISH_FETCHING_PAYMENTS');
                 for(var i in res.data){

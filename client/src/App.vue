@@ -1,5 +1,8 @@
 <template>
   <div id="app">
+    <div class="">
+      <h1>BritePay</h1>
+    </div>
     <DataTable />
   </div>
 </template>

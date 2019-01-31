@@ -3,6 +3,10 @@ config.json
 
 #GCP settings
 app.yaml
+.gcloudignore
+
+#transpiled front end
+server/public
 
 # Logs
 logs

@@ -9,8 +9,13 @@ const cors = require('cors');
 const app = express();
 app.use(cors());
 
-const port = 8080;
+const port = process.env.PORT || 8081;
 
+if(process.env.NODE_ENV === 'production'){
+    app.use(express.static(__dirname + '/public'));
+
+    app.get('/', (req, res) => res.sendFile(__dirname + '/public/index.html'));
+}
 
 //start up
 
@@ -44,18 +49,12 @@ db.once('open', () => {
 });
 
 const api = require("./routes/payments");
-const routes = require("./routes/routes");
+//const routes = require("./routes/routes");
 
-/*
-app.use((req,res,next)=>{
-    if(db._hasOpened)
-        next();
-    else
-        res.send('App not configured properly');
-});*/
+
 
 app.use('/api/payments', api);
-app.use('/', routes);
+//app.use('/', routes);
 
 
 

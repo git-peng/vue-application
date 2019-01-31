@@ -1,9 +1,13 @@
+"use strict";
+
 const express = require('express');
 const mongodb = require('mongodb');
 const mongoose = require('mongoose');
 const fs = require('fs');
+const cors = require('cors');
 
 const app = express();
+app.use(cors());
 
 const port = 8080;
 

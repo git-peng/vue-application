@@ -7,8 +7,20 @@ const router = express.Router();
 
 //get payments
 router.get('/',async (req,res) => {
-    Payment.find({},null,{skip: req['start'], limit: req['count']}, (results) => {
-        res.send(results.toArray());
+    let params = {};
+    params.skip = parseInt(req.query['skip']);
+    params.limit = parseInt(req.query['limit']);
+    params.sort = {};
+    let sortDir = (req.query['sortDir'] == 'asc') ? 1 : -1;
+    params.sort[req.query['sortBy']] = sortDir;
+
+    Payment.find({},null,params, (err, results) => {
+        //todo: add error handling
+        if(results)
+            res.send(results);
+        else{
+            res.send([]);
+        }
     }, (err) => {
         res.send(err);
     });

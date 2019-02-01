@@ -1,22 +1,26 @@
 <template>
     <div class="vueDataTable">
         <table>
-            <tr>
-                <th v-for="key in schema" :key="key">
-                    <div v-bind:class="{
-                        'sortUp': sortBy == key && sortDir == 'asc',
-                        'sortDown': sortBy == key && sortDir == 'desc',
-                        'sortNone': sortBy != key
-                    }" v-on:click="clickHeader(key)">
-                        {{key}}
-                    </div>
-                </th>
-            </tr>
-            <tr v-for="payment in payments" :key="payment._id">
-                <td v-for="key in schema" :key="key">
-                    <div v-if="payment.editing == false">{{payment[key]}}</div><img v-if="key == 'Description'"/>
-                </td>
-            </tr>
+            <thead>
+                <tr>
+                    <th v-for="key in schema" :key="key">
+                        <div v-bind:class="{
+                            'sortUp': sortBy == key && sortDir == 'asc',
+                            'sortDown': sortBy == key && sortDir == 'desc',
+                            'sortNone': sortBy != key
+                        }" v-on:click="clickHeader(key)">
+                            {{key}}
+                        </div>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for="payment in payments" :key="payment._id">
+                    <td v-for="key in schema" :key="key">
+                        <div v-if="payment.editing == false">{{payment[key]}}</div><img v-if="key == 'Description'"/>
+                    </td>
+                </tr>
+            </tbody>
         </table>
         <div v-on:click="getMorePayments()">Get More</div>
     </div>
@@ -63,40 +67,23 @@
 <style lang="scss" scoped>
 
 .vueDataTable{
-    width:100%;
-    overflow: hidden;
+    width: 100%;
 }
 
-tr {
-    max-width: 100%;
+tbody {
+    font-size: 14px;
 }
-
-td, th {
-    border-bottom: 1px #222 solid;
-    resize: horizontal;
-    text-align: left;
+thead{
+    background-color: #14C;
+    color: #EEE;
 }
-
-td div, th div {
-    min-width: 80px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    display: inline-flex;
-    text-align: left;
-    padding-left: 5px;
-}
-
-tr:nth-child(even) {
-    background-color: #DDD;
-}
-
 table {
     border-spacing: 0;
-    width: 100%;
+    width: 85%;
+    margin: auto;
     border-collapse: collapse;
-    table-layout: auto;
-    border: 1px black solid;
+    table-layout: fixed;
+    position: relative;
 }
 
 th {
@@ -105,16 +92,57 @@ th {
     height:30px;
 }
 
+td, th {
+    text-align: left;
+    padding: 15px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &:nth-child(1) {
+        width: 24%;
+    }
+
+    &:nth-child(2) {
+        width: 14%;
+    }
+
+    &:nth-child(3) {
+        width: 18%;
+    }
+
+    &:nth-child(4) {
+        width: 9%;
+    }
+
+    &:nth-child(5) {
+        width: 25%;
+    }
+}
+
+td div, th div {
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+    text-align: left;
+}
+
+tr:nth-child(even) {
+    background-color: #EEE;
+}
+
 th div {
     width: 100%;
     &::before, &::after{
         position: absolute;
-        right: 10px;
-        top: 0px;
-        opacity: 0.2;
+        right: 5px;
+        top: 15px;
+        opacity: 0.4;
     }
     &.sortDown::after, &.sortUp::before{
-        opacity: 0.8;
+        opacity: 0.9;
     }
     &::before{
         content: url('../assets/icon-arrow-up.svg');
@@ -127,6 +155,19 @@ th div {
         &.sortNone::before, &.sortNone::after {
             opacity: 0.7;
         }
+    }
+}
+
+@media screen and (max-width: 786px){
+    table{ 
+        width: 100%;
+    }
+
+    td:nth-child(1), th:nth-child(1){
+        display:none;
+    }
+    td:nth-child(5), th:nth-child(5){
+        display:none;
     }
 }
 

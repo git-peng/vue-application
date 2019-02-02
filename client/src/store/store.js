@@ -3,6 +3,8 @@ import Vuex from "vuex";
 import axios from "axios";
 
 import {uri} from "../DataService";
+import generatePageRange from "../scripts/paginate";
+import { isNumber } from "util";
 
 Vue.use(Vuex);
 
@@ -23,7 +25,9 @@ export default new Vuex.Store({
         searchText: '',
         searchField: 'Name',
         schema: ["ID","Name","Date","Amount", "Description"],
-        refresh: true
+        refresh: true,
+        pageButtons: [1],
+        selectedPage: 1
     },
     actions: {
 
@@ -34,11 +38,14 @@ export default new Vuex.Store({
             }
             commit('REQUEST_STARTED');
             commit('START_FETCHING_PAYMENTS');
-            axios.get(uri+'payments',{params:req}).then((res) => {
+            commit('SET_LAST_REQUEST');
+
+            var promise = axios.get(uri+'payments',{params:req}).then((res) => {
                 commit('REQUEST_COMPLETED');
                 commit('FINISH_FETCHING_PAYMENTS');
                 let data = res.data.data;
                 let count = res.data.count;
+
                 for(var i in data){
                     data[i].editing = false;
                     data[i].expand = false;
@@ -50,7 +57,12 @@ export default new Vuex.Store({
                 else
                     commit('APPEND_PAYMENTS', res.data);
                 commit('APPEND_TO_TABLE');
+                commit('CALCULATE_PAGE_BUTTONS');
+                return res;
+            }).catch((err) => {
+                console.log(err);
             });
+            return promise;
         },
         toggleSortDirection({commit}) {
             commit('TOGGLE_SORT_DIRECTION');
@@ -62,19 +74,26 @@ export default new Vuex.Store({
         },
         getPayments({getters, commit}){
             let request = getters.firstRequest;
-            this.dispatch('fetchPayments', request);
             commit('REFRESH_TABLE');
+            return this.dispatch('fetchPayments', request);
         },
         getMorePayments({commit, getters}){
             let request = getters.nextRequest;
-            this.dispatch('fetchPayments', request);
             commit('APPEND_TO_TABLE');
+            this.dispatch('fetchPayments', request);
         },
         clickSearch({state,commit}, text){
             if(state.fetchingPayments)
                 return;
+            commit('SET_PAGE', 1);
             commit('SET_SEARCH_TEXT', text);
             this.dispatch('getPayments');
+        },
+        clickPage({commit}, page){
+            if (isNumber(page)){
+                commit('SET_PAGE', page);
+                this.dispatch('getPayments');
+            }
         }
     },
     mutations: {
@@ -137,6 +156,16 @@ export default new Vuex.Store({
         },
         SET_ITEMS_PER_REQUEST(state, itemsPerRequest){
             state.itemsPerRequest = itemsPerRequest;
+        },
+        SET_LAST_REQUEST(state, req){
+            state.lastRequest = req;
+        },
+        CALCULATE_PAGE_BUTTONS(state){
+            let lastPage = Math.ceil(state.paymentCount / state.itemsPerRequest);
+            state.pageButtons = generatePageRange(state.selectedPage, lastPage);
+        },
+        SET_PAGE(state, page){
+            state.selectedPage = page;
         }
     },
     getters: {
@@ -144,7 +173,7 @@ export default new Vuex.Store({
             return state.lastRequest;
         },
         nextRequest(state){
-            //get the next request when loading more payments (scrolling down)
+            //get the next request when loading more payments (scrolling down) NOTE: NOT IN USE
             let req = {};
             req.skip = state.payments.length;
             req.limit = state.itemsPerRequest;
@@ -158,7 +187,7 @@ export default new Vuex.Store({
         firstRequest(state){
             //the request when refreshing the table
             let req = {};
-            req.skip = 0;
+            req.skip = ((state.selectedPage - 1) * state.itemsPerRequest);
             req.limit = state.itemsPerRequest;
             req.sortBy = state.sortBy;
             req.sortDir = state.sortDir;

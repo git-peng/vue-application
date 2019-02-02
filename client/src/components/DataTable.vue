@@ -63,11 +63,10 @@
         </table>
         <div class="pageButtons">
             <ul>
-                <li></li>
-                <li></li>
-                <li></li>
-                <li></li>
-                <li></li>
+                <li v-bind:class="{'selected':selectedPage == button.value, 'dots':button.value=='...'}" 
+                v-for="button in pageButtons" v-bind:key="button.key"
+                v-on:click="clickPage(button.value)"
+                >{{button.value}}</li>
             </ul>
         </div>
     </div>
@@ -75,7 +74,7 @@
 
 
 <script>
-    import { mapState, mapMutations, mapActions } from "vuex"
+    import { mapState, mapMutations, mapActions, mapGetters } from "vuex"
 
     export default {
         name: "DataTable",
@@ -86,7 +85,8 @@
         },
         computed: {
             ...mapState(['payments','schema','sortDir','sortBy', 'pendingRequests', 
-            'fetchingPayments', 'paymentCount']),
+            'fetchingPayments', 'paymentCount', 'pageButtons', 'selectedPage']),
+            ...mapGetters([]),
             inputText: {
                 get() {
                     return this.$store.state.searchText;
@@ -101,7 +101,10 @@
                 },
                 set(value) {
                     this.$store.commit('SET_ITEMS_PER_REQUEST',value);
-                    this.getPayments();
+                    if(this.selectedPage > Math.ceil(this.paymentCount / value)){
+                        this.$store.commit('SET_PAGE', Math.ceil(this.paymentCount / value));
+                    }
+                    this.getPayments(true);
                 }
             }
 
@@ -115,7 +118,8 @@
                 getMorePayments: 'getMorePayments',
                 toggleSortDir: 'toggleSortDirection',
                 setSortBy: 'setSortBy',
-                clickSearch: 'clickSearch'
+                clickSearch: 'clickSearch',
+                clickPage: 'clickPage'
             }),
             clickHeader: function(key){
                 if(this.fetchingPayments)
@@ -170,6 +174,21 @@
 
 ul {
     list-style-type: none;
+    padding:0;
+    margin: 0;
+}
+
+li{
+    float: left;
+    padding: 5px;
+    cursor: pointer;
+    &.selected {
+        background-color: skyblue;
+        color: white;
+    }
+    &.dots {
+        cursor: default;
+    }
 }
 
 tbody {

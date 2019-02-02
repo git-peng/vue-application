@@ -20,6 +20,11 @@ export default {
 
 <style>
 
+div, html {
+  margin: 0;
+  text-align: left;
+}
+
 .header{
   text-align: left;
   font-size: 22px;

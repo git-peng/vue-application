@@ -20,6 +20,8 @@ export default new Vuex.Store({
         sortDir: 'desc',
         lastRequest: null,
         filters: {},
+        searchText: '',
+        searchField: 'Name',
         schema: ["ID","Name","Date","Amount", "Description"],
         refresh: true
     },
@@ -35,11 +37,16 @@ export default new Vuex.Store({
             axios.get(uri+'payments',{params:req}).then((res) => {
                 commit('REQUEST_COMPLETED');
                 commit('FINISH_FETCHING_PAYMENTS');
-                for(var i in res.data){
-                    res.data[i].editing = false;
+                let data = res.data.data;
+                let count = res.data.count;
+                for(var i in data){
+                    data[i].editing = false;
+                    data[i].expand = false;
                 }
-                if(state.refresh)
-                    commit('SET_PAYMENTS', res.data);
+                if(state.refresh){
+                    commit('SET_PAYMENTS', data);
+                    commit('SET_COUNT', count)
+                }
                 else
                     commit('APPEND_PAYMENTS', res.data);
                 commit('APPEND_TO_TABLE');
@@ -62,6 +69,12 @@ export default new Vuex.Store({
             let request = getters.nextRequest;
             this.dispatch('fetchPayments', request);
             commit('APPEND_TO_TABLE');
+        },
+        clickSearch({state,commit}, text){
+            if(state.fetchingPayments)
+                return;
+            commit('SET_SEARCH_TEXT', text);
+            this.dispatch('getPayments');
         }
     },
     mutations: {
@@ -94,20 +107,36 @@ export default new Vuex.Store({
             }
         },
         SET_PAYMENTS(state, payments){
-            console.log(state);
             state.payments = payments;
-            console.log('set');
+        },
+        SET_COUNT(state, count){
+            state.paymentCount = count;
         },
         APPEND_PAYMENTS(state, payments){
-            console.log(state);
             state.payments = state.payments.concat(payments);
-            console.log('append');
         },
         REFRESH_TABLE(state){
             state.refresh = true;
         },
         APPEND_TO_TABLE(state){
             state.refresh = false;
+        },
+        RESET_FILTERS(state){
+            state.filters = {};
+        },
+        SET_FILTERS(state, filters){
+            state.filters = filters;
+        },
+        ADD_FILTERS(state, filters){
+            for(let key in filters){
+                state.filters[key] = filters[key]
+            }   
+        },
+        SET_SEARCH_TEXT(state, text){
+            state.searchText = text;
+        },
+        SET_ITEMS_PER_REQUEST(state, itemsPerRequest){
+            state.itemsPerRequest = itemsPerRequest;
         }
     },
     getters: {
@@ -122,6 +151,8 @@ export default new Vuex.Store({
             req.sortBy = state.sortBy;
             req.sortDir = state.sortDir;
             req.filters = state.filters;
+            req.searchText = state.searchText;
+            req.searchField = state.searchField;
             return req;
         },
         firstRequest(state){
@@ -132,6 +163,8 @@ export default new Vuex.Store({
             req.sortBy = state.sortBy;
             req.sortDir = state.sortDir;
             req.filters = state.filters;
+            req.searchText = state.searchText;
+            req.searchField = state.searchField;
             return req;
         },
         paymentById(state, id){

@@ -68,7 +68,11 @@ function uploadDataToDatabase(){
         else{
             console.log('Sample data successfully added');
         }
+
+        db.collection('payments').createIndex( { Name: "text", Description: "text", ID: "text" } );
+
+        db.close();
+
     });
 }
 
-db.close();

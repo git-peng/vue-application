@@ -1,5 +1,5 @@
 <template>  
-    <span v-html="require(`!!html-loader!./../assets/icon-${icon}.svg`)"></span>
+    <div v-html="require(`!!html-loader!./../assets/icon-${icon}.svg`)"></div>
 </template>
 
 <script>  
@@ -11,6 +11,9 @@ export default {
 <style scoped>
     div, svg{
         float: right;
+    }
+    div {
+        cursor: pointer;
     }
 
 </style>

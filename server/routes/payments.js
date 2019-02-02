@@ -1,5 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
+
 const Payment = require('../models/payment');
 
 
@@ -13,14 +14,23 @@ router.get('/',async (req,res) => {
     params.sort = {};
     let sortDir = (req.query['sortDir'] == 'asc') ? 1 : -1;
     params.sort[req.query['sortBy']] = sortDir;
+    let search = {};
+    if(req.query.searchText && req.query.searchField){
+        search[req.query.searchField] = {$regex: new RegExp( req.query.searchText, 'i')};
+    }
+    Payment.find(search,null,params, (err, results) => {
 
-    Payment.find({},null,params, (err, results) => {
-        //todo: add error handling
-        if(results)
-            res.send(results);
-        else{
-            res.send([]);
+        let response = {};
+        response.data = results;
+         //todo: add error handling
+        if (!results){
+            response.count = 0;
+            res.send(response);
         }
+        else Payment.countDocuments(search, (err, results) => {
+            response.count = results;
+            res.send(response);
+        });
     }, (err) => {
         res.send(err);
     });

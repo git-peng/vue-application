@@ -6,6 +6,8 @@ import {uri} from "../DataService";
 import generatePageRange from "../scripts/paginate";
 import { isNumber } from "util";
 
+import getters from "./getters"
+
 Vue.use(Vuex);
 
 const paymentFields = ["Name", "ID", "Description", "Date", "Amount"]
@@ -21,7 +23,10 @@ export default new Vuex.Store({
         sortBy: 'Date',
         sortDir: 'desc',
         lastRequest: null,
-        filters: {},
+        beforeDate: '', 
+        afterDate: '',
+        maxAmount: '',
+        minAmount: '',
         searchText: '',
         searchField: 'Name',
         schema: ["ID","Name","Date","Amount", "Description"],
@@ -94,6 +99,20 @@ export default new Vuex.Store({
                 commit('SET_PAGE', page);
                 this.dispatch('getPayments');
             }
+        },
+        saveDescription: function(context, payment){
+            payment.editing = false;
+            this.dispatch('updateDescription', payment);
+        },
+        updateDescription: function(context, payment){
+            axios.put(uri+"payments/description", {payment}).then((res) => {
+                if(res.status == 200){
+                    //it did it
+                }
+                else{
+                    //it did not
+                }
+            });
         }
     },
     mutations: {
@@ -143,14 +162,6 @@ export default new Vuex.Store({
         RESET_FILTERS(state){
             state.filters = {};
         },
-        SET_FILTERS(state, filters){
-            state.filters = filters;
-        },
-        ADD_FILTERS(state, filters){
-            for(let key in filters){
-                state.filters[key] = filters[key]
-            }   
-        },
         SET_SEARCH_TEXT(state, text){
             state.searchText = text;
         },
@@ -166,40 +177,22 @@ export default new Vuex.Store({
         },
         SET_PAGE(state, page){
             state.selectedPage = page;
+        },
+        SET_SEARCH_FIELD(state, field){
+            state.searchField = field;
+        },
+        SET_MAX_AMOUNT(state, max){
+            state.maxAmount = max;
+        },
+        SET_MIN_AMOUNT(state, min){
+            state.minAmount = min;
+        },
+        SET_BEFORE_DATE(state, before){
+            state.beforeDate = before;
+        },
+        SET_AFTER_DATE(state, after){
+            state.afterDate = after;
         }
     },
-    getters: {
-        lastRequest(state){
-            return state.lastRequest;
-        },
-        nextRequest(state){
-            //get the next request when loading more payments (scrolling down) NOTE: NOT IN USE
-            let req = {};
-            req.skip = state.payments.length;
-            req.limit = state.itemsPerRequest;
-            req.sortBy = state.sortBy;
-            req.sortDir = state.sortDir;
-            req.filters = state.filters;
-            req.searchText = state.searchText;
-            req.searchField = state.searchField;
-            return req;
-        },
-        firstRequest(state){
-            //the request when refreshing the table
-            let req = {};
-            req.skip = ((state.selectedPage - 1) * state.itemsPerRequest);
-            req.limit = state.itemsPerRequest;
-            req.sortBy = state.sortBy;
-            req.sortDir = state.sortDir;
-            req.filters = state.filters;
-            req.searchText = state.searchText;
-            req.searchField = state.searchField;
-            return req;
-        },
-        paymentById(state, id){
-            let payment = state.payments[id];
-
-            return payment;
-        }
-    }
+    getters
 });

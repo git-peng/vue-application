@@ -10,11 +10,51 @@
                     <option value=100>100</option>
                 </select>
             </div>
-            <div class="alignRight">
-                <label>Search </label>
-                <input v-on:keydown="keySearch($event, inputText)" v-model="inputText"/>
-                <SVGIcon icon="search" v-on:click.native="clickSearch(inputText)"/>
-                
+            <div class="tableHeaderRight">
+                <div class="searchContainer">
+                    <input :placeholder="'Search by '+ searchField" v-on:keydown="keySearch($event, inputText)" v-model="inputText"/>
+                    <SVGIcon icon="search" v-on:click.native="clickSearch(inputText)"/>
+                </div>
+                <div class="filterContainer">
+                    <label>Advanced Search Options</label>
+                    <SVGIcon icon="filter" v-on:click.native="toggleFilter()"/>
+                </div>
+            </div>
+        </div>
+        <div v-show="showFilters" class="tableFilters">
+            <div class="searchTypeContainer">
+                <label>Search For </label>
+                <select v-model="searchField">
+                    <option value="Name">Name</option>
+                    <option value="Description">Description</option>
+                    <option value="ID">ID</option>
+                </select>
+            </div>
+            <div class="amountRangeContainer">
+                <label>Amount Range</label>
+                <select v-model="minAmount">
+                    <option value='' selected>Minimum Amount</option>
+                    <option value=-1000>>= -$1000</option>
+                    <option value=-100>>= -$100</option>
+                    <option value=0>>= $0</option>
+                    <option value=100>>= $100</option>
+                    <option value=500>>= $500</option>
+                    <option value=1000>>= $1000</option>
+                </select>
+                <select v-model="maxAmount">
+                    <option value='' selected>Maximum Amount</option>
+                    <option value=-1000>&lt;= -$1000</option>
+                    <option value=-100>&lt;= -$100</option>
+                    <option value=0>&lt;= $0</option>
+                    <option value=100>&lt;= $100</option>
+                    <option value=500>&lt;= $500</option>
+                    <option value=1000>&lt;= $1000</option>
+                </select>
+            </div>
+            <div class="dateRangeContainer">
+                <label>Date Range</label>
+                <input placeholder="After" v-model="afterDate" type="date">
+                <input placeholder="Before" v-model="beforeDate" type="date">
             </div>
         </div>
         <table>
@@ -32,13 +72,14 @@
                 </tr>
             </thead>
             <tbody>
-                <tr class="noPaymentMessage" v-if="paymentCount == 0">No records found</tr>
+                <tr class="noPaymentMessage" v-if="paymentCount == 0"><td v-bind:colspan="screenSize > 786 ? 5 : 3">No records found</td></tr>
                 <template v-for="payment in payments">
                     <tr class="primaryRow" :key="payment._id" v-on:click="clickPayment(payment)"  
                             v-bind:class="{'expand': payment.expand == 'true'}" >
                         <td v-for="key in schema" :key="key" v-on:click="editDescription(key,payment, $event)" >
-                            <div v-if="payment.editing == false || key != 'Description'">
+                            <div v-if="(payment.editing == false || key != 'Description') && key != 'Date'">
                                 {{payment[key]}}</div>
+                            <time v-bind:datetime="payment[key]" v-if="key == 'Date'">{{payment[key]}}</time>
                             <textarea v-bind:ref="'input'+payment._id" v-on:blur="saveDescription(payment)" v-model="payment.Description"
                             v-show="payment.editing == true" v-if="key == 'Description'"/>
                         </td>
@@ -61,13 +102,18 @@
                 </tr>
             </tfoot>
         </table>
-        <div class="pageButtons">
-            <ul>
-                <li v-bind:class="{'selected':selectedPage == button.value, 'dots':button.value=='...'}" 
-                v-for="button in pageButtons" v-bind:key="button.key"
-                v-on:click="clickPage(button.value)"
-                >{{button.value}}</li>
-            </ul>
+        <div class="dataTableFooter"> 
+            <div class="pageButtons">
+                <ul>
+                    <li v-bind:class="{'selected':selectedPage == button.value, 'dots':button.value=='...'}" 
+                    v-for="button in pageButtons" v-bind:key="button.key"
+                    v-on:click="clickPage(button.value)"
+                    >{{button.value}}</li>
+                </ul>
+            </div>
+            <div v-show="paymentCount > 0">
+                Showing Results {{(selectedPage - 1) * itemsPerRequest + 1}} - {{selectedPage * itemsPerRequest}} / {{paymentCount}}
+            </div>
         </div>
     </div>
 </template>
@@ -80,12 +126,25 @@
         name: "DataTable",
         mounted() {
             this.getPayments();
+            this.screenSize = screen.width;
+            console.log(this.screenSize);
+
+            window.addEventListener('resize', this.handleResize)
+            this.handleResize();
         },
         props: {
+
+        },
+
+        data: function(){
+            return {
+                showFilters: false,
+                screenSize: 0
+            }
         },
         computed: {
             ...mapState(['payments','schema','sortDir','sortBy', 'pendingRequests', 
-            'fetchingPayments', 'paymentCount', 'pageButtons', 'selectedPage']),
+            'fetchingPayments', 'paymentCount', 'pageButtons', 'selectedPage', 'searchField']),
             ...mapGetters([]),
             inputText: {
                 get() {
@@ -106,6 +165,46 @@
                     }
                     this.getPayments(true);
                 }
+            },
+            searchField: {
+                get(){
+                    return this.$store.state.searchField;
+                },
+                set(value) {
+                    this.$store.commit('SET_SEARCH_FIELD', value);
+                }
+            },
+            maxAmount: {
+                get(){
+                    return this.$store.state.maxAmount;
+                },
+                set(value){
+                    this.$store.commit('SET_MAX_AMOUNT', value);
+                }
+            },
+            minAmount: {
+                get(){
+                    return this.$store.state.minAmount;
+                },
+                set(value){
+                    this.$store.commit('SET_MIN_AMOUNT', value);
+                }
+            },
+            beforeDate: {
+                get(){
+                    return this.$store.state.beforeDate;
+                },
+                set(value){
+                    this.$store.commit('SET_BEFORE_DATE',  value);
+                }
+            },
+            afterDate: {
+                get(){
+                    return this.$store.state.afterDate;
+                },
+                set(value){
+                    this.$store.commit('SET_AFTER_DATE', value);
+                }
             }
 
         },
@@ -119,7 +218,8 @@
                 toggleSortDir: 'toggleSortDirection',
                 setSortBy: 'setSortBy',
                 clickSearch: 'clickSearch',
-                clickPage: 'clickPage'
+                clickPage: 'clickPage',
+                saveDescription: 'saveDescription'
             }),
             clickHeader: function(key){
                 if(this.fetchingPayments)
@@ -139,12 +239,9 @@
                     this.$nextTick(() => this.$refs['input'+payment._id][0].focus());
                 }
             },
-            saveDescription: function(payment){
-                payment.editing = false;
-            },
             clickPayment: function(payment){
-                //if(screen.width > 786)
-                //    return;
+                if(screen.width > 786)
+                    return;
                 if(payment.expand)
                     payment.expand = false;
                 else
@@ -154,6 +251,12 @@
                 if(event.keyCode == 13){
                     this.clickSearch(inputText);
                 }
+            },
+            toggleFilter: function(){
+                this.showFilters = !this.showFilters;
+            },
+            handleResize: function(){
+                this.screenSize = window.innerWidth;
             }
         }
     }
@@ -170,6 +273,55 @@
     display: flex;
     margin-bottom: 0.5em;
     padding-left: 15px;
+
+    div {
+        display: flex;
+        align-items: center;
+    }
+}
+
+.filterContainer{
+    font-size: 11px;
+}
+
+.tableFilters{
+    padding-left: 25%;
+    display: grid;
+    font-size: 12px;
+    grid-template-columns: repeat(2, minmax(250px, 1fr));
+    grid-template-rows: 1fr 1fr;
+
+    grid-template-areas: 
+    "search amount" 
+    ". date";
+
+    div {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        height: 4em;
+    }
+}
+
+.searchTypeContainer{
+    grid-area: search;
+}
+.amountRangeContainer{
+    grid-area: amount;
+}
+.dateRangeContainer{
+    grid-area: date;
+}
+
+.tableHeaderRight {
+    min-width: 30%;
+    justify-content:space-between;
+}
+
+.dataTableFooter{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 ul {
@@ -180,14 +332,22 @@ ul {
 
 li{
     float: left;
-    padding: 5px;
+    padding: 8px;
+
     cursor: pointer;
+    border-left: 1px solid #DDD;
+    border-right: 1px solid #DDD;
+    border-bottom: 1px solid #DDD;
+    border-collapse: collapse;
+
     &.selected {
         background-color: skyblue;
         color: white;
     }
     &.dots {
         cursor: default;
+        border-left: none;
+        border-right:none;
     }
 }
 
@@ -248,6 +408,7 @@ tr.expandRow {
 
 .alignLeft{
     margin-right: auto;
+    margin-top: auto;
 }
 
 td div, th div {
@@ -307,6 +468,13 @@ td textarea {
     height: 90%;
 }
 
+.noPaymentMessage {
+    padding: 17px;
+    font-size: 16px;
+    text-align: center;
+    width: 100%;
+}
+
 @media screen and (max-width: 786px){
     table{ 
         -webkit-user-select: none; /* Chrome/Safari */        
@@ -323,6 +491,7 @@ td textarea {
     .vueDataTable{
         width: 100%;
     }
+
 }
 
 </style>

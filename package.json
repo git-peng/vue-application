@@ -8,11 +8,12 @@
     "start": "node server/app.js",
     "dev": "nodemon server/app.js",
     "upload-sample-data": "node server/upload-sample.js",
-    "build": "concurrently \"cd client && npm run-script build\" \"\" "
+    "build": "cd client && npm run-script build"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "body-parser": "^1.18.3",
     "cors": "^2.8.5",
     "express": "^4.16.4",
     "mongodb": "^3.1.13",
